@@ -1,6 +1,6 @@
 export interface DocumentItem {
   id: string;
-  type: 'recibo' | 'orcamento';
+  type: 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor';
   clientName: string;
   clientDocument: string;
   date: string;
@@ -12,6 +12,10 @@ export interface DocumentItem {
   paymentConditions?: string;
   validity?: string;
   createdAt: string;
+  // Campos específicos para entrada/saída
+  source?: string;
+  category?: string;
+  isRecurring?: boolean;
 }
 
 export interface OrçamentoItem {
@@ -33,4 +37,8 @@ export interface FormData {
   observations?: string;
   paymentConditions?: string;
   validity?: string;
+  // Campos específicos para entrada/saída
+  source?: string;
+  category?: string;
+  isRecurring?: boolean;
 }

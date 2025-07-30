@@ -24,6 +24,7 @@ function App() {
     setDocuments(storedDocuments);
   }, []);
 
+  // Handlers para criar novos documentos
   const handleNewRecibo = () => {
     setEditingDocument(undefined);
     setActiveView('recibo-form');
@@ -49,50 +50,64 @@ function App() {
     setActiveView('devedor-form');
   };
 
-const handleEditDocument = (document: DocumentItem) => {
-  setEditingDocument(document);
-  switch (document.type) {
-    case 'recibo':
-      setActiveView('recibo-form');
-      break;
-    case 'orcamento':
-      setActiveView('orcamento-form');
-      break;
-    case 'entrada':
-      setActiveView('entrada-form');
-      break;
-    case 'saida':
-      setActiveView('saida-form');
-      break;
-    case 'devedor':
-      setActiveView('devedor-form');
-      break;
-    default:
-      setActiveView('dashboard');
-  }
-};
+  // Handler para editar documentos existentes
+  const handleEditDocument = (document: DocumentItem) => {
+    setEditingDocument(document);
+    switch (document.type) {
+      case 'recibo':
+        setActiveView('recibo-form');
+        break;
+      case 'orcamento':
+        setActiveView('orcamento-form');
+        break;
+      case 'entrada':
+        setActiveView('entrada-form');
+        break;
+      case 'saida':
+        setActiveView('saida-form');
+        break;
+      case 'devedor':
+        setActiveView('devedor-form');
+        break;
+      default:
+        setActiveView('dashboard');
+    }
+  };
 
+  // Handler para visualizar documentos
   const handleViewDocument = (document: DocumentItem) => {
     setViewingDocument(document);
     setActiveView('viewer');
   };
 
+  // Handler para salvar documentos (criar ou atualizar)
   const handleSaveDocument = (formData: FormData, type: 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor') => {
+    // Calcula o valor total baseado no tipo de documento
+    let totalValue = 0;
+    if (type === 'orcamento') {
+      totalValue = formData.items?.reduce((sum, item) => sum + item.total, 0) || 0;
+    } else {
+      totalValue = formData.value || 0;
+    }
+
     const document: DocumentItem = {
       id: editingDocument?.id || uuidv4(),
       type,
       clientName: formData.clientName,
       clientDocument: formData.clientDocument,
       date: formData.date,
-      value: type === 'recibo' || type === 'entrada' || type === 'saida' ? (formData.value || 0) : 
-             (formData.items?.reduce((sum, item) => sum + item.total, 0) || 0),
+      value: totalValue,
       description: formData.description,
       paymentMethod: formData.paymentMethod,
       items: formData.items,
       observations: formData.observations,
       paymentConditions: formData.paymentConditions,
       validity: formData.validity,
-      createdAt: editingDocument?.createdAt || new Date().toISOString()
+      createdAt: editingDocument?.createdAt || new Date().toISOString(),
+      // Campos específicos para entrada/saída
+      source: formData.source,
+      category: formData.category,
+      isRecurring: formData.isRecurring
     };
 
     storageService.saveDocument(document);
@@ -100,10 +115,12 @@ const handleEditDocument = (document: DocumentItem) => {
     const updatedDocuments = storageService.getDocuments();
     setDocuments(updatedDocuments);
     
+    // Volta para o dashboard e limpa o estado de edição
     setActiveView('dashboard');
     setEditingDocument(undefined);
   };
 
+  // Handler para deletar documentos
   const handleDeleteDocument = (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este documento?')) {
       storageService.deleteDocument(id);
@@ -112,12 +129,14 @@ const handleEditDocument = (document: DocumentItem) => {
     }
   };
 
+  // Handler para fechar modais
   const handleCloseModal = () => {
     setActiveView('dashboard');
     setEditingDocument(undefined);
     setViewingDocument(undefined);
   };
 
+  // Handler para editar a partir do visualizador
   const handleEditFromViewer = () => {
     if (viewingDocument) {
       setEditingDocument(viewingDocument);
@@ -169,27 +188,30 @@ const handleEditDocument = (document: DocumentItem) => {
         />
       )}
 
-{activeView === 'entrada-form' && (
-  <EntradaForm
-    document={editingDocument}
-    onSave={(data) => handleSaveDocument(data, 'entrada')}
-    onCancel={handleCloseModal}
-  />
-)}
-{activeView === 'saida-form' && (
-  <SaidaForm
-    document={editingDocument}
-    onSave={(data) => handleSaveDocument(data, 'saida')}
-    onCancel={handleCloseModal}
-  />
-)}
-{activeView === 'devedor-form' && (
-  <DevedorForm
-    document={editingDocument}
-    onSave={(data) => handleSaveDocument(data, 'devedor')}
-    onCancel={handleCloseModal}
-  />
-)}
+      {activeView === 'entrada-form' && (
+        <EntradaForm
+          document={editingDocument}
+          onSave={(data) => handleSaveDocument(data, 'entrada')}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {activeView === 'saida-form' && (
+        <SaidaForm
+          document={editingDocument}
+          onSave={(data) => handleSaveDocument(data, 'saida')}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {activeView === 'devedor-form' && (
+        <DevedorForm
+          document={editingDocument}
+          onSave={(data) => handleSaveDocument(data, 'devedor')}
+          onCancel={handleCloseModal}
+        />
+      )}
+
       {activeView === 'viewer' && viewingDocument && (
         <DocumentViewer
           document={viewingDocument}

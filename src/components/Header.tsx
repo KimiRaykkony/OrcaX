@@ -1,12 +1,21 @@
 import React from 'react';
-import { FileText, Receipt } from 'lucide-react';
+import { FileText, Receipt, TrendingUp, TrendingDown, UserX } from 'lucide-react';
 
 interface HeaderProps {
   onNewRecibo: () => void;
   onNewOrcamento: () => void;
+  onNewEntrada: () => void;
+  onNewSaida: () => void;
+  onNewDevedor: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNewRecibo, onNewOrcamento }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onNewRecibo, 
+  onNewOrcamento, 
+  onNewEntrada, 
+  onNewSaida, 
+  onNewDevedor 
+}) => {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,29 +28,31 @@ export const Header: React.FC<HeaderProps> = ({ onNewRecibo, onNewOrcamento }) =
           </div>
           
           {/* Action buttons */}
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-2">
             <button
-              onClick={onNewRecibo}
+              onClick={onNewDevedor}
               className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200 shadow-sm"
             >
-              <Receipt className="w-4 h-4 mr-2" />
+              <UserX className="w-4 h-4 mr-2" />
               Novo Devedor
             </button>
-                        <button
-              onClick={onNewRecibo}
+            
+            <button
+              onClick={onNewEntrada}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
             >
-              <Receipt className="w-4 h-4 mr-2" />
+              <TrendingUp className="w-4 h-4 mr-2" />
               Entrada
             </button>
             
-                        <button
-              onClick={onNewRecibo}
+            <button
+              onClick={onNewSaida}
               className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-sm"
             >
-              <Receipt className="w-4 h-4 mr-2" />
-              Saida
+              <TrendingDown className="w-4 h-4 mr-2" />
+              Saída
             </button>
+            
             <button
               onClick={onNewRecibo}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm"
@@ -49,7 +60,6 @@ export const Header: React.FC<HeaderProps> = ({ onNewRecibo, onNewOrcamento }) =
               <Receipt className="w-4 h-4 mr-2" />
               Novo Recibo
             </button>
-
 
             <button
               onClick={onNewOrcamento}

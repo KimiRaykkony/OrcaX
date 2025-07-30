@@ -1,8 +1,14 @@
 import jsPDF from 'jspdf';
 import { DocumentItem } from '../types';
-import { formatCurrency, formatDate } from './formatting';
+import { formatCurrency, formatDate, formatDocument } from './formatting';
 
 export const generatePDF = (document: DocumentItem): void => {
+  // Só gera PDF para recibos e orçamentos
+  if (document.type !== 'recibo' && document.type !== 'orcamento') {
+    console.warn('PDF generation is only available for receipts and budgets');
+    return;
+  }
+
   const pdf = new jsPDF();
   
   // Header
@@ -30,7 +36,9 @@ export const generatePDF = (document: DocumentItem): void => {
   pdf.text('Cliente:', 20, 85);
   pdf.setFontSize(12);
   pdf.text(document.clientName, 20, 95);
-  pdf.text(`CPF/CNPJ: ${document.clientDocument}`, 20, 105);
+  if (document.clientDocument) {
+    pdf.text(`CPF/CNPJ: ${formatDocument(document.clientDocument)}`, 20, 105);
+  }
   
   let yPosition = 125;
   
@@ -39,7 +47,8 @@ export const generatePDF = (document: DocumentItem): void => {
     pdf.setFontSize(14);
     pdf.text('Descrição do Serviço:', 20, yPosition);
     pdf.setFontSize(12);
-    pdf.text(document.description || '', 20, yPosition + 10, { maxWidth: 170 });
+    const description = document.description || 'Serviço prestado';
+    pdf.text(description, 20, yPosition + 10, { maxWidth: 170 });
     
     yPosition += 30;
     pdf.setFontSize(14);

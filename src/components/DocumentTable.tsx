@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, Search, Download, FileText } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Download, FileText, Receipt, TrendingUp, TrendingDown, UserX } from 'lucide-react';
 import { DocumentItem } from '../types';
 import { formatCurrency, formatDate } from '../utils/formatting';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -18,11 +18,11 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
   onView
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'recibo' | 'orcamento'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor'>('all');
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.clientDocument.includes(searchTerm);
+                         (doc.clientDocument && doc.clientDocument.includes(searchTerm));
     const matchesType = filterType === 'all' || doc.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -32,13 +32,31 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
     generatePDF(document);
   };
 
+  // Função para obter o ícone e cor baseado no tipo
+  const getTypeInfo = (type: string) => {
+    switch (type) {
+      case 'recibo':
+        return { icon: Receipt, color: 'bg-blue-100 text-blue-800', label: 'Recibo' };
+      case 'orcamento':
+        return { icon: FileText, color: 'bg-orange-100 text-orange-800', label: 'Orçamento' };
+      case 'entrada':
+        return { icon: TrendingUp, color: 'bg-green-100 text-green-800', label: 'Entrada' };
+      case 'saida':
+        return { icon: TrendingDown, color: 'bg-red-100 text-red-800', label: 'Saída' };
+      case 'devedor':
+        return { icon: UserX, color: 'bg-yellow-100 text-yellow-800', label: 'Devedor' };
+      default:
+        return { icon: FileText, color: 'bg-gray-100 text-gray-800', label: 'Documento' };
+    }
+  };
+
   if (documents.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
         <div className="text-gray-400 mb-4">
           <FileText className="w-16 h-16 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum documento encontrado</h3>
-          <p className="text-gray-500">Comece criando seu primeiro recibo ou orçamento</p>
+          <p className="text-gray-500">Comece criando seu primeiro documento</p>
         </div>
       </div>
     );
@@ -61,12 +79,15 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
           </div>
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as 'all' | 'recibo' | 'orcamento')}
+            onChange={(e) => setFilterType(e.target.value as typeof filterType)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">Todos os tipos</option>
             <option value="recibo">Recibos</option>
             <option value="orcamento">Orçamentos</option>
+            <option value="entrada">Entradas</option>
+            <option value="saida">Saídas</option>
+            <option value="devedor">Devedores</option>
           </select>
         </div>
       </div>
@@ -80,7 +101,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
                 Tipo
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Cliente
+                Cliente/Descrição
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Valor
@@ -95,19 +116,27 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredDocuments.map((document) => (
+              const typeInfo = getTypeInfo(document.type);
+              const TypeIcon = typeInfo.icon;
+              
               <tr key={document.id} className="hover:bg-gray-50 transition-colors duration-150">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    document.type === 'recibo' 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-orange-100 text-orange-800'
-                  }`}>
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${typeInfo.color}`}>
+                      <TypeIcon className="w-3 h-3 mr-1" />
+                      {typeInfo.label}
                     {document.type === 'recibo' ? 'Recibo' : 'Orçamento'}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{document.clientName}</div>
+                      {document.clientDocument && (
+                        <div className="text-sm text-gray-500">{document.clientDocument}</div>
+                      )}
+                      {(document.source || document.category) && (
+                        <div className="text-sm text-gray-500">
+                          {document.source && `Origem: ${document.source}`}
+                          {document.category && ` | ${document.category}`}
+                        </div>
+                      )}
                     <div className="text-sm text-gray-500">{document.clientDocument}</div>
                   </div>
                 </td>
@@ -125,13 +154,15 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
                       title="Visualizar"
                     >
                       <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDownloadPDF(document, e)}
-                      className="text-green-600 hover:text-green-900 p-1 rounded transition-colors duration-150"
-                      title="Baixar PDF"
-                    >
-                      <Download className="w-4 h-4" />
+                      {(document.type === 'recibo' || document.type === 'orcamento') && (
+                        <button
+                          onClick={(e) => handleDownloadPDF(document, e)}
+                          className="text-green-600 hover:text-green-900 p-1 rounded transition-colors duration-150"
+                          title="Baixar PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      )}
                     </button>
                     <button
                       onClick={() => onEdit(document)}

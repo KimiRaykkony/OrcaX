@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Download, Edit } from 'lucide-react';
+import { X, Download, Edit, Receipt, FileText, TrendingUp, TrendingDown, UserX } from 'lucide-react';
 import { DocumentItem } from '../types';
 import { formatCurrency, formatDate, formatDocument } from '../utils/formatting';
 import { generatePDF } from '../utils/pdfGenerator';
@@ -16,11 +16,32 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClos
   };
 
   const getTotalValue = () => {
-    if (document.type === 'recibo') {
+    if (document.type === 'recibo' || document.type === 'entrada' || document.type === 'saida' || document.type === 'devedor') {
       return document.value || 0;
     }
     return document.items?.reduce((sum, item) => sum + item.total, 0) || 0;
   };
+
+  // Função para obter informações do tipo de documento
+  const getDocumentTypeInfo = () => {
+    switch (document.type) {
+      case 'recibo':
+        return { title: 'Visualizar Recibo', icon: Receipt, label: 'RECIBO' };
+      case 'orcamento':
+        return { title: 'Visualizar Orçamento', icon: FileText, label: 'ORÇAMENTO' };
+      case 'entrada':
+        return { title: 'Visualizar Entrada', icon: TrendingUp, label: 'ENTRADA FINANCEIRA' };
+      case 'saida':
+        return { title: 'Visualizar Saída', icon: TrendingDown, label: 'SAÍDA FINANCEIRA' };
+      case 'devedor':
+        return { title: 'Visualizar Devedor', icon: UserX, label: 'REGISTRO DE DEVEDOR' };
+      default:
+        return { title: 'Visualizar Documento', icon: FileText, label: 'DOCUMENTO' };
+    }
+  };
+
+  const docInfo = getDocumentTypeInfo();
+  const DocIcon = docInfo.icon;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -28,16 +49,18 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClos
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
-            {document.type === 'recibo' ? 'Visualizar Recibo' : 'Visualizar Orçamento'}
+            {docInfo.title}
           </h2>
           <div className="flex items-center space-x-2">
-            <button
-              onClick={handleDownloadPDF}
-              className="flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-150"
-            >
-              <Download className="w-4 h-4 mr-1" />
-              PDF
-            </button>
+            {(document.type === 'recibo' || document.type === 'orcamento') && (
+              <button
+                onClick={handleDownloadPDF}
+                className="flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-150"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                PDF
+              </button>
+            )}
             <button
               onClick={onEdit}
               className="flex items-center px-3 py-2 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors duration-150"
@@ -63,8 +86,10 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClos
                 Orça<span className="text-orange-500">X</span>
               </h1>
               <h2 className="text-2xl font-semibold text-gray-800">
-                {document.type === 'recibo' ? 'RECIBO' : 'ORÇAMENTO'}
-              </h2>
+                <DocIcon className="w-6 h-6 mr-2 text-gray-600" />
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  {docInfo.label}
+              </div>
             </div>
             <div className="text-right text-sm text-gray-600">
               <p>Data: {formatDate(document.date)}</p>
@@ -72,25 +97,50 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClos
             </div>
           </div>
 
-          {/* Client Info */}
+          {/* Client/Info Section */}
           <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Dados do Cliente</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              {document.type === 'entrada' || document.type === 'saida' ? 'Informações' : 'Dados do Cliente'}
+            </h3>
             <p className="text-gray-700"><strong>Nome:</strong> {document.clientName}</p>
-            <p className="text-gray-700"><strong>CPF/CNPJ:</strong> {formatDocument(document.clientDocument)}</p>
+            {document.clientDocument && (
+              <p className="text-gray-700"><strong>CPF/CNPJ:</strong> {formatDocument(document.clientDocument)}</p>
+            )}
+            {document.source && (
+              <p className="text-gray-700">
+                <strong>{document.type === 'entrada' ? 'Origem:' : document.type === 'saida' ? 'Destino:' : 'Origem:'}</strong> {document.source}
+              </p>
+            )}
+            {document.category && (
+              <p className="text-gray-700"><strong>Categoria:</strong> {document.category}</p>
+            )}
+            {document.isRecurring && (
+              <p className="text-gray-700"><strong>Recorrente:</strong> Sim</p>
+            )}
           </div>
 
           {/* Content based on document type */}
-          {document.type === 'recibo' ? (
+          {(document.type === 'recibo' || document.type === 'entrada' || document.type === 'saida' || document.type === 'devedor') ? (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Descrição do Serviço</h3>
-                <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{document.description}</p>
-              </div>
+              {document.description && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {document.type === 'devedor' ? 'Descrição do Serviço' : 'Descrição'}
+                  </h3>
+                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{document.description}</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Valor</h3>
-                  <p className="text-2xl font-bold text-green-600">{formatCurrency(document.value || 0)}</p>
+                  <p className={`text-2xl font-bold ${
+                    document.type === 'entrada' ? 'text-green-600' : 
+                    document.type === 'saida' ? 'text-red-600' : 
+                    document.type === 'devedor' ? 'text-yellow-600' : 'text-green-600'
+                  }`}>
+                    {formatCurrency(document.value || 0)}
+                  </p>
                 </div>
 
                 {document.paymentMethod && (
@@ -102,6 +152,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClos
               </div>
             </div>
           ) : (
+            // Orçamento content
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Itens do Orçamento</h3>
