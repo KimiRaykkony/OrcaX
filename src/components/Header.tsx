@@ -22,11 +22,35 @@ export const Header: React.FC<HeaderProps> = ({ onNewRecibo, onNewOrcamento }) =
           <div className="flex space-x-3">
             <button
               onClick={onNewRecibo}
+              className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200 shadow-sm"
+            >
+              <Receipt className="w-4 h-4 mr-2" />
+              Novo Devedor
+            </button>
+                        <button
+              onClick={onNewRecibo}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+            >
+              <Receipt className="w-4 h-4 mr-2" />
+              Entrada
+            </button>
+            
+                        <button
+              onClick={onNewRecibo}
+              className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 shadow-sm"
+            >
+              <Receipt className="w-4 h-4 mr-2" />
+              Saida
+            </button>
+            <button
+              onClick={onNewRecibo}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm"
             >
               <Receipt className="w-4 h-4 mr-2" />
               Novo Recibo
             </button>
+
+
             <button
               onClick={onNewOrcamento}
               className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 shadow-sm"
