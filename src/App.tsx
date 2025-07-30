@@ -1,0 +1,143 @@
+import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { Header } from './components/Header';
+import { DocumentTable } from './components/DocumentTable';
+import { ReciboForm } from './components/ReciboForm';
+import { OrcamentoForm } from './components/OrcamentoForm';
+import { DocumentViewer } from './components/DocumentViewer';
+import { DocumentItem, FormData } from './types';
+import { storageService } from './utils/storage';
+
+type ActiveView = 'dashboard' | 'recibo-form' | 'orcamento-form' | 'viewer';
+
+function App() {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  const [editingDocument, setEditingDocument] = useState<DocumentItem | undefined>();
+  const [viewingDocument, setViewingDocument] = useState<DocumentItem | undefined>();
+
+  useEffect(() => {
+    const storedDocuments = storageService.getDocuments();
+    setDocuments(storedDocuments);
+  }, []);
+
+  const handleNewRecibo = () => {
+    setEditingDocument(undefined);
+    setActiveView('recibo-form');
+  };
+
+  const handleNewOrcamento = () => {
+    setEditingDocument(undefined);
+    setActiveView('orcamento-form');
+  };
+
+  const handleEditDocument = (document: DocumentItem) => {
+    setEditingDocument(document);
+    setActiveView(document.type === 'recibo' ? 'recibo-form' : 'orcamento-form');
+  };
+
+  const handleViewDocument = (document: DocumentItem) => {
+    setViewingDocument(document);
+    setActiveView('viewer');
+  };
+
+  const handleSaveDocument = (formData: FormData, type: 'recibo' | 'orcamento') => {
+    const document: DocumentItem = {
+      id: editingDocument?.id || uuidv4(),
+      type,
+      clientName: formData.clientName,
+      clientDocument: formData.clientDocument,
+      date: formData.date,
+      value: type === 'recibo' ? (formData.value || 0) : (formData.items?.reduce((sum, item) => sum + item.total, 0) || 0),
+      description: formData.description,
+      paymentMethod: formData.paymentMethod,
+      items: formData.items,
+      observations: formData.observations,
+      paymentConditions: formData.paymentConditions,
+      validity: formData.validity,
+      createdAt: editingDocument?.createdAt || new Date().toISOString()
+    };
+
+    storageService.saveDocument(document);
+    
+    const updatedDocuments = storageService.getDocuments();
+    setDocuments(updatedDocuments);
+    
+    setActiveView('dashboard');
+    setEditingDocument(undefined);
+  };
+
+  const handleDeleteDocument = (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
+      storageService.deleteDocument(id);
+      const updatedDocuments = storageService.getDocuments();
+      setDocuments(updatedDocuments);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setActiveView('dashboard');
+    setEditingDocument(undefined);
+    setViewingDocument(undefined);
+  };
+
+  const handleEditFromViewer = () => {
+    if (viewingDocument) {
+      setEditingDocument(viewingDocument);
+      setActiveView(viewingDocument.type === 'recibo' ? 'recibo-form' : 'orcamento-form');
+      setViewingDocument(undefined);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header
+        onNewRecibo={handleNewRecibo}
+        onNewOrcamento={handleNewOrcamento}
+      />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Gerencie seus recibos e orçamentos de forma profissional
+          </p>
+        </div>
+
+        <DocumentTable
+          documents={documents}
+          onEdit={handleEditDocument}
+          onDelete={handleDeleteDocument}
+          onView={handleViewDocument}
+        />
+      </main>
+
+      {/* Modals */}
+      {activeView === 'recibo-form' && (
+        <ReciboForm
+          document={editingDocument}
+          onSave={(data) => handleSaveDocument(data, 'recibo')}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {activeView === 'orcamento-form' && (
+        <OrcamentoForm
+          document={editingDocument}
+          onSave={(data) => handleSaveDocument(data, 'orcamento')}
+          onCancel={handleCloseModal}
+        />
+      )}
+
+      {activeView === 'viewer' && viewingDocument && (
+        <DocumentViewer
+          document={viewingDocument}
+          onClose={handleCloseModal}
+          onEdit={handleEditFromViewer}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
