@@ -19,12 +19,15 @@ function App() {
   const [editingDocument, setEditingDocument] = useState<DocumentItem | undefined>();
   const [viewingDocument, setViewingDocument] = useState<DocumentItem | undefined>();
 
+  // Carrega documentos do localStorage na inicialização
   useEffect(() => {
     const storedDocuments = storageService.getDocuments();
     setDocuments(storedDocuments);
   }, []);
 
-  // Handlers para criar novos documentos
+  /**
+   * Handlers para criar novos documentos
+   */
   const handleNewRecibo = () => {
     setEditingDocument(undefined);
     setActiveView('recibo-form');
@@ -50,7 +53,9 @@ function App() {
     setActiveView('devedor-form');
   };
 
-  // Handler para editar documentos existentes
+  /**
+   * Handler para editar documentos existentes
+   */
   const handleEditDocument = (document: DocumentItem) => {
     setEditingDocument(document);
     switch (document.type) {
@@ -74,13 +79,17 @@ function App() {
     }
   };
 
-  // Handler para visualizar documentos
+  /**
+   * Handler para visualizar documentos
+   */
   const handleViewDocument = (document: DocumentItem) => {
     setViewingDocument(document);
     setActiveView('viewer');
   };
 
-  // Handler para salvar documentos (criar ou atualizar)
+  /**
+   * Handler para salvar documentos (criar ou atualizar)
+   */
   const handleSaveDocument = (formData: FormData, type: 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor') => {
     // Calcula o valor total baseado no tipo de documento
     let totalValue = 0;
@@ -120,7 +129,9 @@ function App() {
     setEditingDocument(undefined);
   };
 
-  // Handler para deletar documentos
+  /**
+   * Handler para deletar documentos
+   */
   const handleDeleteDocument = (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este documento?')) {
       storageService.deleteDocument(id);
@@ -129,14 +140,18 @@ function App() {
     }
   };
 
-  // Handler para fechar modais
+  /**
+   * Handler para fechar modais
+   */
   const handleCloseModal = () => {
     setActiveView('dashboard');
     setEditingDocument(undefined);
     setViewingDocument(undefined);
   };
 
-  // Handler para editar a partir do visualizador
+  /**
+   * Handler para editar a partir do visualizador
+   */
   const handleEditFromViewer = () => {
     if (viewingDocument) {
       setEditingDocument(viewingDocument);
@@ -171,7 +186,7 @@ function App() {
         />
       </main>
 
-      {/* Modals */}
+      {/* Modais para formulários */}
       {activeView === 'recibo-form' && (
         <ReciboForm
           document={editingDocument}
@@ -212,6 +227,7 @@ function App() {
         />
       )}
 
+      {/* Modal para visualização de documentos */}
       {activeView === 'viewer' && viewingDocument && (
         <DocumentViewer
           document={viewingDocument}

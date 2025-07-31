@@ -20,6 +20,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor'>('all');
 
+  // Filtra documentos baseado na busca e tipo
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (doc.clientDocument && doc.clientDocument.includes(searchTerm));
@@ -32,7 +33,9 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
     generatePDF(document);
   };
 
-  // Função para obter o ícone e cor baseado no tipo
+  /**
+   * Retorna informações de ícone, cor e label baseado no tipo do documento
+   */
   const getTypeInfo = (type: string) => {
     switch (type) {
       case 'recibo':
@@ -50,6 +53,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
     }
   };
 
+  // Estado vazio - nenhum documento encontrado
   if (documents.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -64,7 +68,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
-      {/* Search and filters */}
+      {/* Barra de busca e filtros */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -92,7 +96,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tabela de documentos */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -115,19 +119,21 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredDocuments.map((document) => (
+            {filteredDocuments.map((document) => {
               const typeInfo = getTypeInfo(document.type);
               const TypeIcon = typeInfo.icon;
               
-              <tr key={document.id} className="hover:bg-gray-50 transition-colors duration-150">
+              return (
+                <tr key={document.id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${typeInfo.color}`}>
                       <TypeIcon className="w-3 h-3 mr-1" />
                       {typeInfo.label}
-                    {document.type === 'recibo' ? 'Recibo' : 'Orçamento'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div>
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{document.clientName}</div>
                       {document.clientDocument && (
                         <div className="text-sm text-gray-500">{document.clientDocument}</div>
                       )}
@@ -137,23 +143,23 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
                           {document.category && ` | ${document.category}`}
                         </div>
                       )}
-                    <div className="text-sm text-gray-500">{document.clientDocument}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {formatCurrency(document.value || 0)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(document.date)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => onView(document)}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-150"
-                      title="Visualizar"
-                    >
-                      <Eye className="w-4 h-4" />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {formatCurrency(document.value || 0)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(document.date)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => onView(document)}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-150"
+                        title="Visualizar"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                       {(document.type === 'recibo' || document.type === 'orcamento') && (
                         <button
                           onClick={(e) => handleDownloadPDF(document, e)}
@@ -163,25 +169,25 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
                           <Download className="w-4 h-4" />
                         </button>
                       )}
-                    </button>
-                    <button
-                      onClick={() => onEdit(document)}
-                      className="text-orange-600 hover:text-orange-900 p-1 rounded transition-colors duration-150"
-                      title="Editar"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(document.id)}
-                      className="text-red-600 hover:text-red-900 p-1 rounded transition-colors duration-150"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      <button
+                        onClick={() => onEdit(document)}
+                        className="text-orange-600 hover:text-orange-900 p-1 rounded transition-colors duration-150"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(document.id)}
+                        className="text-red-600 hover:text-red-900 p-1 rounded transition-colors duration-150"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

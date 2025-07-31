@@ -2,6 +2,9 @@ import jsPDF from 'jspdf';
 import { DocumentItem } from '../types';
 import { formatCurrency, formatDate, formatDocument } from './formatting';
 
+/**
+ * Gera e baixa um PDF para documentos do tipo recibo ou orçamento
+ */
 export const generatePDF = (document: DocumentItem): void => {
   // Só gera PDF para recibos e orçamentos
   if (document.type !== 'recibo' && document.type !== 'orcamento') {
@@ -9,6 +12,7 @@ export const generatePDF = (document: DocumentItem): void => {
     return;
   }
 
+  try {
   const pdf = new jsPDF();
   
   // Header
@@ -57,18 +61,18 @@ export const generatePDF = (document: DocumentItem): void => {
     if (document.paymentMethod) {
       pdf.text(`Forma de Pagamento: ${document.paymentMethod}`, 20, yPosition + 15);
     }
-  } else {
+      // Conteúdo específico do orçamento
     // Orçamento content
     pdf.setFontSize(14);
     pdf.text('Itens:', 20, yPosition);
     yPosition += 15;
-    
+      // Cabeçalho da tabela
     // Table header
     pdf.setFontSize(10);
     pdf.text('Item', 20, yPosition);
     pdf.text('Qtd', 80, yPosition);
     pdf.text('Valor Unit.', 110, yPosition);
-    pdf.text('Total', 150, yPosition);
+    // Header da empresa
     
     yPosition += 10;
     pdf.line(20, yPosition, 190, yPosition);
@@ -77,25 +81,25 @@ export const generatePDF = (document: DocumentItem): void => {
     let total = 0;
     document.items?.forEach((item) => {
       pdf.text(item.name, 20, yPosition, { maxWidth: 55 });
-      pdf.text(item.quantity.toString(), 80, yPosition);
+    // Tipo do documento
       pdf.text(formatCurrency(item.unitPrice), 110, yPosition);
       pdf.text(formatCurrency(item.total), 150, yPosition);
       total += item.total;
       yPosition += 10;
     });
-    
+    // Data e número do documento
     pdf.line(20, yPosition, 190, yPosition);
     yPosition += 10;
     pdf.setFontSize(12);
     pdf.text(`Total Geral: ${formatCurrency(total)}`, 120, yPosition);
-    
+    // Informações do cliente
     yPosition += 20;
     if (document.paymentConditions) {
       pdf.text('Condições de Pagamento:', 20, yPosition);
       pdf.setFontSize(10);
       pdf.text(document.paymentConditions, 20, yPosition + 10, { maxWidth: 170 });
       yPosition += 25;
-    }
+      // Conteúdo específico do recibo
     
     if (document.validity) {
       pdf.setFontSize(12);
@@ -103,7 +107,7 @@ export const generatePDF = (document: DocumentItem): void => {
     }
   }
   
-  // Observations
+    // Observações
   if (document.observations) {
     yPosition += 20;
     pdf.setFontSize(12);
@@ -112,12 +116,16 @@ export const generatePDF = (document: DocumentItem): void => {
     pdf.text(document.observations, 20, yPosition + 10, { maxWidth: 170 });
   }
   
-  // Footer
+    // Rodapé
   pdf.setFontSize(8);
   pdf.setTextColor(100, 100, 100);
   pdf.text('Documento gerado pelo OrçaX', 20, 280);
   
-  // Save
+    // Salva o arquivo
   const filename = `${docType.toLowerCase()}_${document.clientName.replace(/\s+/g, '_')}_${document.id.slice(-8)}.pdf`;
   pdf.save(filename);
+  } catch (error) {
+    console.error('Erro ao gerar PDF:', error);
+    alert('Erro ao gerar PDF. Tente novamente.');
+  }
 };
