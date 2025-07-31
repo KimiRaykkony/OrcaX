@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Logo */}
           <div className="flex items-center">
             <h1 className="text-2xl font-bold text-blue-900">
-              Orça<span className="text-orange-500">X</span>
+              Contro<span className="text-orange-500">LeX</span>
             </h1>
           </div>
           

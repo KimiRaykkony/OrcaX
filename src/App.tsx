@@ -9,10 +9,18 @@ import { EntradaForm } from './components/EntradaForm';
 import { SaidaForm } from './components/SaidaForm';
 import { DevedorForm } from './components/DevedorForm';
 import { DocumentViewer } from './components/DocumentViewer';
+import { Rodape } from './components/Rodape'; // ✅ Importação do rodapé
 import { DocumentItem, FormData } from './types';
 import { storageService } from './utils/storage';
 
-type ActiveView = 'dashboard' | 'recibo-form' | 'orcamento-form' | 'entrada-form' | 'saida-form' | 'devedor-form' | 'viewer';
+type ActiveView =
+  | 'dashboard'
+  | 'recibo-form'
+  | 'orcamento-form'
+  | 'entrada-form'
+  | 'saida-form'
+  | 'devedor-form'
+  | 'viewer';
 
 function App() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -20,15 +28,11 @@ function App() {
   const [editingDocument, setEditingDocument] = useState<DocumentItem | undefined>();
   const [viewingDocument, setViewingDocument] = useState<DocumentItem | undefined>();
 
-  // Carrega documentos do localStorage na inicialização
   useEffect(() => {
     const storedDocuments = storageService.getDocuments();
     setDocuments(storedDocuments);
   }, []);
 
-  /**
-   * Handlers para criar novos documentos
-   */
   const handleNewRecibo = () => {
     setEditingDocument(undefined);
     setActiveView('recibo-form');
@@ -54,9 +58,6 @@ function App() {
     setActiveView('devedor-form');
   };
 
-  /**
-   * Handler para editar documentos existentes
-   */
   const handleEditDocument = (document: DocumentItem) => {
     setEditingDocument(document);
     switch (document.type) {
@@ -80,19 +81,15 @@ function App() {
     }
   };
 
-  /**
-   * Handler para visualizar documentos
-   */
   const handleViewDocument = (document: DocumentItem) => {
     setViewingDocument(document);
     setActiveView('viewer');
   };
 
-  /**
-   * Handler para salvar documentos (criar ou atualizar)
-   */
-  const handleSaveDocument = (formData: FormData, type: 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor') => {
-    // Calcula o valor total baseado no tipo de documento
+  const handleSaveDocument = (
+    formData: FormData,
+    type: 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor'
+  ) => {
     let totalValue = 0;
     if (type === 'orcamento') {
       totalValue = formData.items?.reduce((sum, item) => sum + item.total, 0) || 0;
@@ -114,25 +111,20 @@ function App() {
       paymentConditions: formData.paymentConditions,
       validity: formData.validity,
       createdAt: editingDocument?.createdAt || new Date().toISOString(),
-      // Campos específicos para entrada/saída
       source: formData.source,
       category: formData.category,
       isRecurring: formData.isRecurring
     };
 
     storageService.saveDocument(document);
-    
+
     const updatedDocuments = storageService.getDocuments();
     setDocuments(updatedDocuments);
-    
-    // Volta para o dashboard e limpa o estado de edição
+
     setActiveView('dashboard');
     setEditingDocument(undefined);
   };
 
-  /**
-   * Handler para deletar documentos
-   */
   const handleDeleteDocument = (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este documento?')) {
       storageService.deleteDocument(id);
@@ -141,18 +133,12 @@ function App() {
     }
   };
 
-  /**
-   * Handler para fechar modais
-   */
   const handleCloseModal = () => {
     setActiveView('dashboard');
     setEditingDocument(undefined);
     setViewingDocument(undefined);
   };
 
-  /**
-   * Handler para editar a partir do visualizador
-   */
   const handleEditFromViewer = () => {
     if (viewingDocument) {
       setEditingDocument(viewingDocument);
@@ -162,7 +148,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">{/* ✅ padding-bottom para o rodapé fixo */}
       <Header
         onNewRecibo={handleNewRecibo}
         onNewOrcamento={handleNewOrcamento}
@@ -170,7 +156,7 @@ function App() {
         onNewSaida={handleNewSaida}
         onNewDevedor={handleNewDevedor}
       />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -179,7 +165,6 @@ function App() {
           </p>
         </div>
 
-        {/* Resumo Financeiro */}
         <div className="mb-8">
           <FinancialSummary documents={documents} />
         </div>
@@ -192,7 +177,6 @@ function App() {
         />
       </main>
 
-      {/* Modais para formulários */}
       {activeView === 'recibo-form' && (
         <ReciboForm
           document={editingDocument}
@@ -233,7 +217,6 @@ function App() {
         />
       )}
 
-      {/* Modal para visualização de documentos */}
       {activeView === 'viewer' && viewingDocument && (
         <DocumentViewer
           document={viewingDocument}
@@ -241,6 +224,8 @@ function App() {
           onEdit={handleEditFromViewer}
         />
       )}
+
+      <Rodape /> {/* ✅ Rodapé fixo no fim da tela */}
     </div>
   );
 }
