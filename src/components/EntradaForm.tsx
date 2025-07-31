@@ -40,9 +40,6 @@ export const EntradaForm: React.FC<EntradaFormProps> = ({ document, onSave, onCa
     }
   }, [document]);
 
-  /**
-   * Valida os campos obrigatórios do formulário
-   */
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -58,7 +55,6 @@ export const EntradaForm: React.FC<EntradaFormProps> = ({ document, onSave, onCa
       newErrors.description = 'Descrição é obrigatória';
     }
 
-    // CPF/CNPJ é opcional para entradas, mas se preenchido deve ser válido
     if (formData.clientDocument && !validateDocument(formData.clientDocument)) {
       newErrors.clientDocument = 'CPF/CNPJ inválido';
     }
@@ -79,7 +75,6 @@ export const EntradaForm: React.FC<EntradaFormProps> = ({ document, onSave, onCa
     setFormData(prev => ({ ...prev, clientDocument: cleanValue }));
   };
 
-  // Categorias predefinidas para entradas
   const categories = [
     'Vendas',
     'Serviços',
@@ -91,7 +86,6 @@ export const EntradaForm: React.FC<EntradaFormProps> = ({ document, onSave, onCa
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center">
             <TrendingUp className="w-6 h-6 text-green-600 mr-2" />
@@ -107,7 +101,6 @@ export const EntradaForm: React.FC<EntradaFormProps> = ({ document, onSave, onCa
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -256,7 +249,6 @@ export const EntradaForm: React.FC<EntradaFormProps> = ({ document, onSave, onCa
             />
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               type="button"

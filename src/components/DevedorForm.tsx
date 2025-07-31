@@ -1,5 +1,6 @@
+// devedor.tsx
 import React, { useState, useEffect } from 'react';
-import { Save, X, UserX } from 'lucide-react';
+import { Save, X, Receipt } from 'lucide-react';
 import { DocumentItem, FormData } from '../types';
 import { validateDocument, formatDocument } from '../utils/formatting';
 
@@ -54,7 +55,7 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
     }
 
     if (!formData.description?.trim()) {
-      newErrors.description = 'Descrição do serviço é obrigatória';
+      newErrors.description = 'Motivo da dívida é obrigatório';
     }
 
     setErrors(newErrors);
@@ -79,9 +80,9 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center">
-            <UserX className="w-6 h-6 text-yellow-600 mr-2" />
+            <Receipt className="w-6 h-6 text-red-600 mr-2" />
             <h2 className="text-xl font-semibold text-gray-900">
-              {document ? 'Editar Devedor' : 'Novo Devedor'}
+              {document ? 'Editar Registro de Dívida' : 'Novo Cliente Devedor'}
             </h2>
           </div>
           <button
@@ -97,16 +98,16 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome do Cliente *
+                Nome do Devedor *
               </label>
               <input
                 type="text"
                 value={formData.clientName}
                 onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                   errors.clientName ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="Nome completo do cliente"
+                placeholder="Nome completo"
               />
               {errors.clientName && (
                 <p className="text-red-500 text-sm mt-1">{errors.clientName}</p>
@@ -115,13 +116,13 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                CPF/CNPJ *
+                CPF ou CNPJ *
               </label>
               <input
                 type="text"
                 value={formatDocument(formData.clientDocument)}
                 onChange={(e) => formatDocumentInput(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                   errors.clientDocument ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="000.000.000-00 ou 00.000.000/0000-00"
@@ -135,19 +136,19 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data *
+                Data do Registro *
               </label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Valor (R$) *
+                Valor da Dívida (R$) *
               </label>
               <input
                 type="number"
@@ -155,7 +156,7 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
                 min="0"
                 value={formData.value || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                   errors.value ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="0.00"
@@ -168,16 +169,16 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Descrição do Serviço *
+              Motivo da Dívida *
             </label>
             <textarea
               value={formData.description || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                 errors.description ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="Descreva o serviço prestado..."
+              placeholder="Descreva o motivo da dívida..."
             />
             {errors.description && (
               <p className="text-red-500 text-sm mt-1">{errors.description}</p>
@@ -191,7 +192,7 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
             <select
               value={formData.paymentMethod || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
             >
               <option value="">Selecione...</option>
               <option value="Dinheiro">Dinheiro</option>
@@ -211,12 +212,11 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
               value={formData.observations || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, observations: e.target.value }))}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="Observações adicionais (opcional)..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="Informações adicionais, como prazos, cobranças anteriores etc."
             />
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               type="button"
@@ -227,7 +227,7 @@ export const DevedorForm: React.FC<DevedorFormProps> = ({ document, onSave, onCa
             </button>
             <button
               type="submit"
-              className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-150"
+              className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-150"
             >
               <Save className="w-4 h-4 mr-2" />
               {document ? 'Atualizar' : 'Salvar'}
