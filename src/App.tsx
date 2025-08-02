@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { LoginForm } from './components/LoginForm';
+import { AuthForm } from './components/AuthForm';
 import { Header } from './components/Header';
 import { FinancialSummary } from './components/FinancialSummary';
 import { DocumentTable } from './components/DocumentTable';
@@ -191,7 +191,7 @@ function App() {
 
   // Mostrar tela de login se não autenticado
   if (!isAuthenticated) {
-    return <LoginForm onLoginSuccess={handleLoginSuccess} />;
+    return <AuthForm onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
