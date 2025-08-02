@@ -1,5 +1,6 @@
 import React from 'react';
-import { FileText, Receipt, TrendingUp, TrendingDown, UserX } from 'lucide-react';
+import { FileText, Receipt, TrendingUp, TrendingDown, UserX, LogOut, User } from 'lucide-react';
+import { authService } from '../utils/auth';
 
 interface HeaderProps {
   onNewRecibo: () => void;
@@ -7,6 +8,7 @@ interface HeaderProps {
   onNewEntrada: () => void;
   onNewSaida: () => void;
   onNewDevedor: () => void;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -14,8 +16,17 @@ export const Header: React.FC<HeaderProps> = ({
   onNewOrcamento, 
   onNewEntrada, 
   onNewSaida, 
-  onNewDevedor 
+  onNewDevedor,
+  onLogout
 }) => {
+  const currentUser = authService.getCurrentUser();
+
+  const handleLogout = () => {
+    if (window.confirm('Tem certeza que deseja sair?')) {
+      onLogout();
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,10 +36,18 @@ export const Header: React.FC<HeaderProps> = ({
             <h1 className="text-2xl font-bold text-blue-900">
               Contro<span className="text-orange-500">LeX</span>
             </h1>
+            {currentUser && (
+              <div className="ml-6 flex items-center text-sm text-gray-600">
+                <User className="w-4 h-4 mr-1" />
+                <span>Olá, {currentUser.name}</span>
+              </div>
+            )}
           </div>
           
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-2">
+          {/* Action buttons and user menu */}
+          <div className="flex items-center gap-2">
+            {/* Document buttons */}
+            <div className="flex flex-wrap gap-2">
             <button
               onClick={onNewDevedor}
               className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200 shadow-sm"
@@ -67,6 +86,16 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <FileText className="w-4 h-4 mr-2" />
               Novo Orçamento
+            </button>
+          </div>
+
+            {/* Logout button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>

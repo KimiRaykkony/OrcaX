@@ -1,3 +1,5 @@
+export * from './auth';
+
 export interface DocumentItem {
   id: string;
   type: 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor';

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Header';
 import { FinancialSummary } from './components/FinancialSummary';
 import { DocumentTable } from './components/DocumentTable';
@@ -11,6 +12,8 @@ import { DevedorForm } from './components/DevedorForm';
 import { DocumentViewer } from './components/DocumentViewer';
 import { Rodape } from './components/Rodape'; // ✅ Importação do rodapé
 import { DocumentItem, FormData } from './types';
+import { User } from './types/auth';
+import { authService } from './utils/auth';
 import { storageService } from './utils/storage';
 
 type ActiveView =
@@ -24,14 +27,41 @@ type ActiveView =
 
 function App() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [editingDocument, setEditingDocument] = useState<DocumentItem | undefined>();
   const [viewingDocument, setViewingDocument] = useState<DocumentItem | undefined>();
 
+  // Verificar sessão ativa ao carregar a aplicação
   useEffect(() => {
+    const session = authService.checkSession();
+    setIsAuthenticated(session.isAuthenticated);
+    setCurrentUser(session.user);
+    setAuthLoading(false);
+  }, []);
+
+  // Carregar documentos apenas se autenticado
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const storedDocuments = storageService.getDocuments();
     setDocuments(storedDocuments);
-  }, []);
+  }, [isAuthenticated]);
+
+  const handleLoginSuccess = () => {
+    const session = authService.checkSession();
+    setIsAuthenticated(session.isAuthenticated);
+    setCurrentUser(session.user);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setActiveView('dashboard');
+  };
 
   const handleNewRecibo = () => {
     setEditingDocument(undefined);
@@ -147,6 +177,23 @@ function App() {
     }
   };
 
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar tela de login se não autenticado
+  if (!isAuthenticated) {
+    return <LoginForm onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">{/* ✅ padding-bottom para o rodapé fixo */}
       <Header
@@ -155,6 +202,7 @@ function App() {
         onNewEntrada={handleNewEntrada}
         onNewSaida={handleNewSaida}
         onNewDevedor={handleNewDevedor}
+        onLogout={handleLogout}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
