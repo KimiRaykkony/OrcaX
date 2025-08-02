@@ -11,6 +11,7 @@ import { SaidaForm } from './components/SaidaForm';
 import { DevedorForm } from './components/DevedorForm';
 import { DocumentViewer } from './components/DocumentViewer';
 import { Rodape } from './components/Rodape'; // ✅ Importação do rodapé
+import { UserManagement } from './components/admin/UserManagement';
 import { DocumentItem, FormData } from './types';
 import { User } from './types/auth';
 import { authService } from './utils/auth';
@@ -18,6 +19,7 @@ import { storageService } from './utils/storage';
 
 type ActiveView =
   | 'dashboard'
+  | 'user-management'
   | 'recibo-form'
   | 'orcamento-form'
   | 'entrada-form'
@@ -86,6 +88,10 @@ function App() {
   const handleNewDevedor = () => {
     setEditingDocument(undefined);
     setActiveView('devedor-form');
+  };
+
+  const handleUserManagement = () => {
+    setActiveView('user-management');
   };
 
   const handleEditDocument = (document: DocumentItem) => {
@@ -203,9 +209,12 @@ function App() {
         onNewSaida={handleNewSaida}
         onNewDevedor={handleNewDevedor}
         onLogout={handleLogout}
+        onUserManagement={currentUser?.role === 'admin' ? handleUserManagement : undefined}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeView === 'dashboard' && (
+          <>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-2">
@@ -223,6 +232,12 @@ function App() {
           onDelete={handleDeleteDocument}
           onView={handleViewDocument}
         />
+          </>
+        )}
+
+        {activeView === 'user-management' && currentUser?.role === 'admin' && (
+          <UserManagement />
+        )}
       </main>
 
       {activeView === 'recibo-form' && (

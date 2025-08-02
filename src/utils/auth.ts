@@ -1,50 +1,44 @@
 import { User, LoginCredentials, RegisterCredentials } from '../types/auth';
+import { encryptPassword, verifyPassword } from './encryption';
 
 const AUTH_STORAGE_KEY = 'controlex_auth';
 const REMEMBER_ME_KEY = 'controlex_remember_me';
 const USERS_STORAGE_KEY = 'controlex_users';
 
-// Usuários padrão do sistema
-const getDefaultUsers = () => [
-  {
-    id: '1',
-    name: 'Administrador',
-    email: 'admin@controlex.com',
-    password: 'admin123',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Usuário Demo',
-    email: 'demo@controlex.com',
-    password: 'demo123',
-    createdAt: new Date().toISOString()
-  }
-];
+// Usuário administrador padrão
+const getDefaultAdmin = () => ({
+  id: 'admin-001',
+  name: 'Administrador Principal',
+  email: 'admin@controlex.com',
+  password: encryptPassword('admin123'),
+  role: 'admin' as const,
+  createdAt: new Date().toISOString(),
+  isActive: true
+});
 
-// Função para obter todos os usuários (incluindo cadastrados)
-const getAllUsers = () => {
+// Função para obter todos os usuários
+const getAllUsers = (): any[] => {
   try {
     const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
     const users = storedUsers ? JSON.parse(storedUsers) : [];
     
-    // Se não há usuários armazenados, inicializar com usuários padrão
+    // Se não há usuários, inicializar com admin padrão
     if (users.length === 0) {
-      const defaultUsers = getDefaultUsers();
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
-      return defaultUsers;
+      const defaultAdmin = getDefaultAdmin();
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify([defaultAdmin]));
+      return [defaultAdmin];
     }
     
     return users;
   } catch {
-    const defaultUsers = getDefaultUsers();
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
-    return defaultUsers;
+    const defaultAdmin = getDefaultAdmin();
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify([defaultAdmin]));
+    return [defaultAdmin];
   }
 };
 
-// Função para salvar um novo usuário
-const saveUser = (user: any) => {
+// Função para salvar usuário
+const saveUser = (user: any): boolean => {
   try {
     const users = getAllUsers();
     users.push(user);
@@ -54,45 +48,77 @@ const saveUser = (user: any) => {
     return false;
   }
 };
+
+// Função para atualizar usuário
+const updateUser = (updatedUser: any): boolean => {
+  try {
+    const users = getAllUsers();
+    const index = users.findIndex(u => u.id === updatedUser.id);
+    if (index !== -1) {
+      users[index] = updatedUser;
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+// Função para deletar usuário
+const deleteUser = (userId: string): boolean => {
+  try {
+    const users = getAllUsers();
+    const filteredUsers = users.filter(u => u.id !== userId);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(filteredUsers));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /**
- * Serviço de autenticação para gerenciar login, logout e sessões
+ * Serviço de autenticação com controle de permissões
  */
 export const authService = {
   /**
-   * Registra um novo usuário
+   * Registra um novo usuário (apenas admins podem criar gerentes)
    */
-  register: async (credentials: RegisterCredentials): Promise<{ success: boolean; user?: User; error?: string }> => {
+  register: async (credentials: RegisterCredentials, createdBy?: string): Promise<{ success: boolean; user?: User; error?: string }> => {
     try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Validar se email já existe
       const users = getAllUsers();
-      const existingUser = users.find(u => u.email.toLowerCase() === credentials.email.toLowerCase());
       
+      // Verificar se email já existe
+      const existingUser = users.find(u => u.email.toLowerCase() === credentials.email.toLowerCase());
       if (existingUser) {
-        return {
-          success: false,
-          error: 'Este email já está cadastrado'
-        };
+        return { success: false, error: 'Este email já está cadastrado' };
+      }
+
+      // Se está criando um gerente, verificar limites
+      if (credentials.role === 'manager') {
+        const activeManagers = users.filter(u => u.role === 'manager' && u.isActive);
+        if (activeManagers.length >= 2) {
+          return { success: false, error: 'Limite máximo de 2 gerentes atingido' };
+        }
       }
 
       // Criar novo usuário
       const newUser = {
-        id: Date.now().toString(),
+        id: `${credentials.role}-${Date.now()}`,
         name: credentials.name,
         email: credentials.email.toLowerCase(),
-        password: credentials.password, // Em produção, seria hasheada
-        createdAt: new Date().toISOString()
+        password: encryptPassword(credentials.password),
+        role: credentials.role || 'manager',
+        createdAt: new Date().toISOString(),
+        createdBy: createdBy,
+        isActive: true
       };
 
-      // Salvar usuário
       const saved = saveUser(newUser);
       if (!saved) {
-        return {
-          success: false,
-          error: 'Erro ao salvar usuário'
-        };
+        return { success: false, error: 'Erro ao salvar usuário' };
       }
 
       // Retornar usuário sem senha
@@ -100,18 +126,15 @@ export const authService = {
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
-        createdAt: newUser.createdAt
+        role: newUser.role,
+        createdAt: newUser.createdAt,
+        createdBy: newUser.createdBy,
+        isActive: newUser.isActive
       };
 
-      return {
-        success: true,
-        user: registeredUser
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Erro interno do servidor'
-      };
+      return { success: true, user: registeredUser };
+    } catch {
+      return { success: false, error: 'Erro interno do servidor' };
     }
   },
 
@@ -120,20 +143,16 @@ export const authService = {
    */
   login: async (credentials: LoginCredentials): Promise<{ success: boolean; user?: User; error?: string }> => {
     try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Validar credenciais
       const users = getAllUsers();
-      const user = users.find(
-        u => u.email.toLowerCase() === credentials.email.toLowerCase() && u.password === credentials.password
+      const user = users.find(u => 
+        u.email.toLowerCase() === credentials.email.toLowerCase() && 
+        u.isActive
       );
 
-      if (!user) {
-        return {
-          success: false,
-          error: 'Email ou senha incorretos'
-        };
+      if (!user || !verifyPassword(credentials.password, user.password)) {
+        return { success: false, error: 'Email ou senha incorretos' };
       }
 
       // Criar objeto do usuário sem a senha
@@ -141,10 +160,13 @@ export const authService = {
         id: user.id,
         name: user.name,
         email: user.email,
-        createdAt: user.createdAt
+        role: user.role,
+        createdAt: user.createdAt,
+        createdBy: user.createdBy,
+        isActive: user.isActive
       };
 
-      // Salvar no localStorage
+      // Salvar sessão
       const authData = {
         user: authenticatedUser,
         timestamp: Date.now(),
@@ -153,25 +175,18 @@ export const authService = {
 
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));
 
-      // Se "lembrar-me" estiver marcado, salvar flag adicional
       if (credentials.rememberMe) {
         localStorage.setItem(REMEMBER_ME_KEY, 'true');
       }
 
-      return {
-        success: true,
-        user: authenticatedUser
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Erro interno do servidor'
-      };
+      return { success: true, user: authenticatedUser };
+    } catch {
+      return { success: false, error: 'Erro interno do servidor' };
     }
   },
 
   /**
-   * Realiza o logout do usuário
+   * Realiza o logout
    */
   logout: (): void => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -179,7 +194,7 @@ export const authService = {
   },
 
   /**
-   * Verifica se existe uma sessão ativa válida
+   * Verifica sessão ativa
    */
   checkSession: (): { isAuthenticated: boolean; user: User | null } => {
     try {
@@ -194,32 +209,27 @@ export const authService = {
       const now = Date.now();
       const sessionAge = now - parsed.timestamp;
 
-      // Sessão expira em 24 horas (ou 30 dias se "lembrar-me" estiver ativo)
-      const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      // Sessão expira em 8 horas (ou 30 dias se lembrar)
+      const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
       if (sessionAge > maxAge) {
-        // Sessão expirada
         authService.logout();
         return { isAuthenticated: false, user: null };
       }
 
-      // Atualizar timestamp da sessão
+      // Atualizar timestamp
       parsed.timestamp = now;
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(parsed));
 
-      return {
-        isAuthenticated: true,
-        user: parsed.user
-      };
+      return { isAuthenticated: true, user: parsed.user };
     } catch {
-      // Dados corrompidos, limpar
       authService.logout();
       return { isAuthenticated: false, user: null };
     }
   },
 
   /**
-   * Obtém o usuário atual da sessão
+   * Obtém usuário atual
    */
   getCurrentUser: (): User | null => {
     const session = authService.checkSession();
@@ -227,44 +237,92 @@ export const authService = {
   },
 
   /**
-   * Valida formato de email
+   * Obtém todos os gerentes (apenas para admins)
+   */
+  getManagers: (): User[] => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      return [];
+    }
+
+    const users = getAllUsers();
+    return users
+      .filter(u => u.role === 'manager')
+      .map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt,
+        createdBy: u.createdBy,
+        isActive: u.isActive
+      }));
+  },
+
+  /**
+   * Ativa/desativa gerente (apenas para admins)
+   */
+  toggleManagerStatus: (managerId: string): boolean => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      return false;
+    }
+
+    const users = getAllUsers();
+    const manager = users.find(u => u.id === managerId && u.role === 'manager');
+    
+    if (!manager) return false;
+
+    manager.isActive = !manager.isActive;
+    return updateUser(manager);
+  },
+
+  /**
+   * Remove gerente (apenas para admins)
+   */
+  deleteManager: (managerId: string): boolean => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser || currentUser.role !== 'admin') {
+      return false;
+    }
+
+    return deleteUser(managerId);
+  },
+
+  /**
+   * Verifica permissões do usuário
+   */
+  hasPermission: (action: 'create' | 'read' | 'update' | 'delete'): boolean => {
+    const user = authService.getCurrentUser();
+    if (!user) return false;
+
+    const permissions = {
+      admin: { create: true, read: true, update: true, delete: true },
+      manager: { create: true, read: true, update: false, delete: false }
+    };
+
+    return permissions[user.role][action];
+  },
+
+  /**
+   * Validações
    */
   validateEmail: (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   },
 
-  /**
-   * Valida senha (mínimo 6 caracteres)
-   */
   validatePassword: (password: string): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
     
-    if (password.length < 8) {
-      errors.push('Mínimo 8 caracteres');
-    }
+    if (password.length < 8) errors.push('Mínimo 8 caracteres');
+    if (!/[A-Z]/.test(password)) errors.push('Uma letra maiúscula');
+    if (!/[a-z]/.test(password)) errors.push('Uma letra minúscula');
+    if (!/\d/.test(password)) errors.push('Um número');
     
-    if (!/[A-Z]/.test(password)) {
-      errors.push('Uma letra maiúscula');
-    }
-    
-    if (!/[a-z]/.test(password)) {
-      errors.push('Uma letra minúscula');
-    }
-    
-    if (!/\d/.test(password)) {
-      errors.push('Um número');
-    }
-    
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
+    return { isValid: errors.length === 0, errors };
   },
 
-  /**
-   * Calcula a força da senha
-   */
   getPasswordStrength: (password: string): { strength: 'weak' | 'medium' | 'strong'; score: number } => {
     let score = 0;
     
@@ -282,9 +340,6 @@ export const authService = {
     return { strength, score: Math.min(100, score) };
   },
 
-  /**
-   * Valida nome completo
-   */
   validateName: (name: string): boolean => {
     return name.trim().length >= 2 && /^[a-zA-ZÀ-ÿ\s]+$/.test(name.trim());
   }

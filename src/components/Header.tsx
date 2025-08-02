@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Receipt, TrendingUp, TrendingDown, UserX, LogOut, User } from 'lucide-react';
+import { FileText, Receipt, TrendingUp, TrendingDown, UserX, LogOut, User, Users, Shield } from 'lucide-react';
 import { authService } from '../utils/auth';
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
   onNewSaida: () => void;
   onNewDevedor: () => void;
   onLogout: () => void;
+  onUserManagement?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -17,7 +18,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNewEntrada, 
   onNewSaida, 
   onNewDevedor,
-  onLogout
+  onLogout,
+  onUserManagement
 }) => {
   const currentUser = authService.getCurrentUser();
 
@@ -40,6 +42,12 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="ml-6 flex items-center text-sm text-gray-600">
                 <User className="w-4 h-4 mr-1" />
                 <span>Olá, {currentUser.name}</span>
+                {currentUser.role === 'admin' && (
+                  <div className="ml-2 flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Admin
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -48,6 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2">
             {/* Document buttons */}
             <div className="flex flex-wrap gap-2">
+            {authService.hasPermission('create') && (
+              <>
             <button
               onClick={onNewDevedor}
               className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200 shadow-sm"
@@ -87,7 +97,21 @@ export const Header: React.FC<HeaderProps> = ({
               <FileText className="w-4 h-4 mr-2" />
               Novo Orçamento
             </button>
+              </>
+            )}
           </div>
+
+            {/* Admin buttons */}
+            {currentUser?.role === 'admin' && onUserManagement && (
+              <button
+                onClick={onUserManagement}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 shadow-sm"
+                title="Gerenciar Usuários"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Usuários
+              </button>
+            )}
 
             {/* Logout button */}
             <button

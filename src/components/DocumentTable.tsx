@@ -3,6 +3,7 @@ import { Eye, Edit, Trash2, Search, Download, FileText, Receipt, TrendingUp, Tre
 import { DocumentItem } from '../types';
 import { formatCurrency, formatDate } from '../utils/formatting';
 import { generatePDF } from '../utils/pdfGenerator';
+import { authService } from '../utils/auth';
 
 interface DocumentTableProps {
   documents: DocumentItem[];
@@ -19,6 +20,9 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'recibo' | 'orcamento' | 'entrada' | 'saida' | 'devedor'>('all');
+  
+  const canEdit = authService.hasPermission('update');
+  const canDelete = authService.hasPermission('delete');
 
   // Filtra documentos baseado na busca e tipo
   const filteredDocuments = documents.filter(doc => {
@@ -171,6 +175,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
                       )}
                       <button
                         onClick={() => onEdit(document)}
+                        disabled={!canEdit}
                         className="text-orange-600 hover:text-orange-900 p-1 rounded transition-colors duration-150"
                         title="Editar"
                       >
@@ -178,6 +183,7 @@ export const DocumentTable: React.FC<DocumentTableProps> = ({
                       </button>
                       <button
                         onClick={() => onDelete(document.id)}
+                        disabled={!canDelete}
                         className="text-red-600 hover:text-red-900 p-1 rounded transition-colors duration-150"
                         title="Excluir"
                       >
