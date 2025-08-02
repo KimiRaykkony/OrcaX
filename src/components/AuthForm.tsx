@@ -278,16 +278,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
               </div>
             )}
 
-            {/* Credenciais de demonstração (apenas no login) */}
-            {mode === 'login' && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">Credenciais de Demonstração:</h3>
-                <div className="text-xs text-blue-700 space-y-1">
-                  <div><strong>Admin:</strong> admin@controlex.com / admin123</div>
-                  <div><strong>Demo:</strong> demo@controlex.com / demo123</div>
-                </div>
-              </div>
-            )}
 
             {/* Formulário de Login */}
             {mode === 'login' && (
